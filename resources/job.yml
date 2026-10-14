@@ -1,0 +1,31 @@
+resources:
+  jobs:
+    combustiveis_job:
+      name: combustiveis_ingestao_e_medallion
+      description: Baixa os CSVs novos da ANP e atualiza as camadas Bronze/Silver/Gold.
+
+      # Toda segunda às 8h (horário de Brasília). Em `dev` a agenda fica pausada.
+      schedule:
+        quartz_cron_expression: "0 0 8 ? * MON"
+        timezone_id: America/Sao_Paulo
+
+      email_notifications:
+        on_failure:
+          - ${workspace.current_user.userName}
+
+      tasks:
+        - task_key: ingerir_anp
+          notebook_task:
+            notebook_path: ../src/ingestao/ingerir_anp.py
+            base_parameters:
+              catalogo: ${var.catalogo}
+              schema: ${resources.schemas.combustiveis.name}
+              ano_inicial: ${var.ano_inicial}
+          max_retries: 2
+          min_retry_interval_millis: 60000
+
+        - task_key: atualizar_medallion
+          depends_on:
+            - task_key: ingerir_anp
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.combustiveis_pipeline.id}

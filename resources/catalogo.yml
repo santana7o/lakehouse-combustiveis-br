@@ -1,0 +1,14 @@
+resources:
+  schemas:
+    combustiveis:
+      catalog_name: ${var.catalogo}
+      name: ${var.schema}
+      comment: Lakehouse de preços de combustíveis (ANP) — Bronze, Silver e Gold.
+
+  volumes:
+    landing:
+      catalog_name: ${var.catalogo}
+      schema_name: ${resources.schemas.combustiveis.name}
+      name: landing
+      volume_type: MANAGED
+      comment: Zona de pouso dos CSVs brutos baixados da ANP.

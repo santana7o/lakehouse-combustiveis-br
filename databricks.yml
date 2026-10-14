@@ -1,0 +1,42 @@
+# Databricks Asset Bundle: infraestrutura como código do projeto inteiro.
+# Deploy:  databricks bundle deploy -t dev
+# Rodar:   databricks bundle run combustiveis_job -t dev
+bundle:
+  name: lakehouse_combustiveis_br
+
+include:
+  - resources/*.yml
+
+variables:
+  catalogo:
+    description: Catálogo do Unity Catalog (na Free Edition, o padrão é `workspace`).
+    default: workspace
+  schema:
+    description: Schema onde ficam o Volume e as tabelas Bronze/Silver/Gold.
+    default: combustiveis
+  warehouse_id:
+    description: SQL warehouse usado pelo dashboard AI/BI.
+    lookup:
+      warehouse: Serverless Starter Warehouse
+  ano_inicial:
+    description: Primeiro ano dos CSVs mensais da ANP a ingerir.
+    default: "2025"
+
+# O host do workspace vem do perfil da CLI (`databricks auth login --host ...`)
+# ou da variável de ambiente DATABRICKS_HOST.
+
+targets:
+  dev:
+    # Modo development: recursos ganham prefixo "[dev seu_usuario]" e agendas ficam pausadas.
+    mode: development
+    default: true
+    variables:
+      schema: combustiveis_dev
+
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+    permissions:
+      - user_name: ${workspace.current_user.userName}
+        level: CAN_MANAGE

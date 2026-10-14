@@ -1,0 +1,13 @@
+resources:
+  pipelines:
+    combustiveis_pipeline:
+      name: combustiveis_medallion
+      catalog: ${var.catalogo}
+      schema: ${resources.schemas.combustiveis.name}
+      serverless: true
+      configuration:
+        bundle.sourcePath: ${workspace.file_path}/src
+        landing.path: /Volumes/${var.catalogo}/${resources.schemas.combustiveis.name}/landing/anp
+      libraries:
+        - file:
+            path: ../src/pipeline/medallion.py

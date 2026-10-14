@@ -1,0 +1,9 @@
+resources:
+  dashboards:
+    combustiveis_dashboard:
+      display_name: Preços de Combustíveis no Brasil
+      file_path: ../src/dashboard/combustiveis.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      # As queries usam nomes curtos de tabela; catálogo e schema vêm do target.
+      dataset_catalog: ${var.catalogo}
+      dataset_schema: ${resources.schemas.combustiveis.name}

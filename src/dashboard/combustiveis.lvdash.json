@@ -1,0 +1,517 @@
+{
+  "datasets": [
+    {
+      "name": "ds_kpis",
+      "displayName": "KPIs",
+      "queryLines": [
+        "SELECT\n",
+        "  COUNT(*) AS coletas,\n",
+        "  COUNT(DISTINCT cnpj_revenda) AS postos,\n",
+        "  COUNT(DISTINCT uf, municipio) AS municipios,\n",
+        "  DATE_FORMAT(MAX(data_coleta), 'dd/MM/yyyy') AS ultima_coleta\n",
+        "FROM silver_precos\n"
+      ]
+    },
+    {
+      "name": "ds_gasolina_regiao",
+      "displayName": "Gasolina por região",
+      "queryLines": [
+        "SELECT semana, regiao, ROUND(SUM(preco_medio * postos_pesquisados) / SUM(postos_pesquisados), 3) AS preco\n",
+        "FROM gold_preco_semanal_uf\n",
+        "WHERE produto = 'GASOLINA'\n",
+        "GROUP BY ALL\n"
+      ]
+    },
+    {
+      "name": "ds_paridade",
+      "displayName": "Paridade etanol/gasolina (última semana)",
+      "queryLines": [
+        "SELECT uf, paridade, preco_etanol, preco_gasolina,\n",
+        "  CASE WHEN etanol_compensa THEN 'Etanol compensa' ELSE 'Gasolina compensa' END AS recomendacao\n",
+        "FROM gold_paridade_etanol\n",
+        "WHERE semana = (SELECT MAX(semana) FROM gold_paridade_etanol)\n"
+      ]
+    },
+    {
+      "name": "ds_gasolina_uf",
+      "displayName": "Gasolina por UF (última semana)",
+      "queryLines": [
+        "SELECT uf, regiao, preco_medio, preco_minimo, preco_maximo, postos_pesquisados\n",
+        "FROM gold_preco_semanal_uf\n",
+        "WHERE produto = 'GASOLINA'\n",
+        "  AND semana = (SELECT MAX(semana) FROM gold_preco_semanal_uf)\n"
+      ]
+    },
+    {
+      "name": "ds_bandeiras",
+      "displayName": "Bandeira mais barata por UF",
+      "queryLines": [
+        "SELECT uf, bandeira, preco_medio, postos\n",
+        "FROM gold_ranking_bandeiras\n",
+        "WHERE produto = 'GASOLINA' AND ranking = 1 AND postos >= 5\n",
+        "ORDER BY preco_medio\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "visao_geral",
+      "displayName": "Visão geral",
+      "layout": [
+        {
+          "widget": {
+            "name": "titulo",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# ⛽ Preços de Combustíveis no Brasil\n",
+                "Dados abertos da **ANP** processados em um Lakehouse Medallion (Bronze → Silver → Gold) com Lakeflow Declarative Pipelines e Unity Catalog. Atualização semanal automática."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_coletas",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpis",
+                  "fields": [
+                    {
+                      "name": "coletas",
+                      "expression": "`coletas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "coletas",
+                  "displayName": "Coletas de preço"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Coletas de preço"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_postos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpis",
+                  "fields": [
+                    {
+                      "name": "postos",
+                      "expression": "`postos`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "postos",
+                  "displayName": "Postos pesquisados"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Postos pesquisados"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_municipios",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpis",
+                  "fields": [
+                    {
+                      "name": "municipios",
+                      "expression": "`municipios`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "municipios",
+                  "displayName": "Municípios"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Municípios"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 2,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_ultima",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpis",
+                  "fields": [
+                    {
+                      "name": "ultima_coleta",
+                      "expression": "`ultima_coleta`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "ultima_coleta",
+                  "displayName": "Última coleta"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Última coleta"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "linha_regiao",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_gasolina_regiao",
+                  "fields": [
+                    {
+                      "name": "semana",
+                      "expression": "`semana`"
+                    },
+                    {
+                      "name": "regiao",
+                      "expression": "`regiao`"
+                    },
+                    {
+                      "name": "preco",
+                      "expression": "`preco`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "semana",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Semana"
+                },
+                "y": {
+                  "fieldName": "preco",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Preço médio (R$/L)"
+                },
+                "color": {
+                  "fieldName": "regiao",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Região"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Evolução do preço da gasolina por região",
+                "showDescription": true,
+                "description": "Média semanal dos preços de venda (R$/litro)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "barra_paridade",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_paridade",
+                  "fields": [
+                    {
+                      "name": "uf",
+                      "expression": "`uf`"
+                    },
+                    {
+                      "name": "paridade",
+                      "expression": "`paridade`"
+                    },
+                    {
+                      "name": "recomendacao",
+                      "expression": "`recomendacao`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "uf",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  },
+                  "displayName": "UF"
+                },
+                "y": {
+                  "fieldName": "paridade",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Etanol / Gasolina"
+                },
+                "color": {
+                  "fieldName": "recomendacao",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Recomendação"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Etanol ou gasolina? Paridade por UF",
+                "showDescription": true,
+                "description": "Abaixo de 0,70 o etanol compensa (semana mais recente)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "barra_gasolina_uf",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_gasolina_uf",
+                  "fields": [
+                    {
+                      "name": "uf",
+                      "expression": "`uf`"
+                    },
+                    {
+                      "name": "preco_medio",
+                      "expression": "`preco_medio`"
+                    },
+                    {
+                      "name": "regiao",
+                      "expression": "`regiao`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "uf",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  },
+                  "displayName": "UF"
+                },
+                "y": {
+                  "fieldName": "preco_medio",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Preço médio (R$/L)"
+                },
+                "color": {
+                  "fieldName": "regiao",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Região"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Preço da gasolina por UF",
+                "showDescription": true,
+                "description": "Semana mais recente"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 16,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "tabela_bandeiras",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_bandeiras",
+                  "fields": [
+                    {
+                      "name": "uf",
+                      "expression": "`uf`"
+                    },
+                    {
+                      "name": "bandeira",
+                      "expression": "`bandeira`"
+                    },
+                    {
+                      "name": "preco_medio",
+                      "expression": "`preco_medio`"
+                    },
+                    {
+                      "name": "postos",
+                      "expression": "`postos`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "uf",
+                    "displayName": "UF"
+                  },
+                  {
+                    "fieldName": "bandeira",
+                    "displayName": "Bandeira mais barata"
+                  },
+                  {
+                    "fieldName": "preco_medio",
+                    "displayName": "Preço médio (R$/L)"
+                  },
+                  {
+                    "fieldName": "postos",
+                    "displayName": "Postos"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Bandeira mais barata por UF",
+                "showDescription": true,
+                "description": "Gasolina comum, todo o período (bandeiras com 5+ postos na UF)"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 16,
+            "width": 3,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    }
+  ]
+}

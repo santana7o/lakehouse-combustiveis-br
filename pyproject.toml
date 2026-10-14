@@ -1,0 +1,28 @@
+[project]
+name = "lakehouse-combustiveis-br"
+version = "0.1.0"
+description = "Lakehouse Medallion no Databricks com preços de combustíveis da ANP"
+requires-python = ">=3.11,<3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pyspark==3.5.3",
+    "pytest>=8",
+    "ruff>=0.6",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/ingestao/*" = ["F821", "E402"]
+"src/pipeline/*" = ["F821", "E402"]
