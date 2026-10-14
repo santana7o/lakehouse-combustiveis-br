@@ -1,0 +1,9 @@
+# Faz a barra de linguagens do GitHub refletir o projeto inteiro:
+# o bundle e o CI (YAML), as consultas (SQL) e o dashboard AI/BI (JSON)
+# também são código, não só o Python.
+*.yml linguist-detectable=true
+*.sql linguist-detectable=true
+*.lvdash.json linguist-detectable=true linguist-language=JSON
+
+# Lockfile gerado automaticamente não entra na contagem.
+uv.lock linguist-generated=true
