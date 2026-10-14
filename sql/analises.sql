@@ -1,7 +1,7 @@
 -- Consultas prontas para o Databricks SQL Editor / Dashboard AI/BI.
--- Em dev o bundle prefixa o schema com seu usuário; em prod o schema é `combustiveis`.
+-- Schema de produção. Em dev o bundle prefixa o nome com o usuário (dev_<usuario>_combustiveis_dev).
 USE CATALOG workspace;
-USE SCHEMA dev_felipe_dhesantana_combustiveis_dev;
+USE SCHEMA combustiveis;
 
 -- 1. Evolução do preço médio da gasolina por região
 SELECT semana, regiao, ROUND(AVG(preco_medio), 3) AS preco_medio
